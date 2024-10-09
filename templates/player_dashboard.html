@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Player Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var socket = io();
+            socket.on('update_dashboard', function() {
+                window.location.href = window.location.href.split('?')[0];
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Player Dashboard</h1>
+    <a href="/logout">Logout</a>
+    
+    <h2>Available Casinos</h2>
+    <form method="post">
+        <ul>
+            {% for casino in available_casinos if casino[0] not in casino_history_ids %}
+                <li>
+                    <strong>{{ casino[1] }}</strong><br>
+                    <button type="submit" name="action" value="activate_casino">Activate</button>
+                    <input type="hidden" name="casino_id" value="{{ casino[0] }}">
+                    <img src="{{ casino[3] }}" alt="Casino Image" style="max-width:200px; max-height:200px;"><br>
+                    Price Range: {{ casino[4] }} - {{ casino[5] }}<br>
+                </li>
+            {% endfor %}
+        </ul>
+    </form>
+
+    <h2>Active Casinos</h2>
+    <ul>
+        {% for active in active_casinos %}
+            <li>
+                <strong>{{ active[1] }}</strong><br>
+                Affiliate Link: <a href="{{ active[3] }}" target="_blank">Visit Affiliate Link</a><br>
+                Price Assigned: €{{ active[4] }}<br>
+                Status: {{ active[2] }}<br>
+                {% if active[2] == 'pending_payment' %}
+                    <strong>Waiting for Payment Confirmation</strong><br>
+                {% elif active[2] == 'pending_deposit' %}
+                    <form method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="casino_id" value="{{ active[0] }}">
+                        <input type="file" name="screenshot" accept="image/*">
+                        <button type="submit" name="action" value="upload_screenshot">Upload Screenshot</button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Casino History</h2>
+    <ul>
+        {% for history in casino_history %}
+            <li>
+                <strong>{{ history[1] }}</strong><br>
+                Affiliate Link: <a href="{{ history[3] }}" target="_blank">Visit Affiliate Link</a><br>
+                Price Assigned: €{{ history[4] }}<br>
+                Status: {{ history[2] }}<br>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

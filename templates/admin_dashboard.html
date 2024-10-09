@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <script>
+        function confirmDeletePlayer() {
+            return confirm("Are you sure you want to delete this player?");
+        }
+        function toggleEditCasino(casinoId) {
+            var editForm = document.getElementById('edit_form_' + casinoId);
+            var editButton = document.getElementById('edit_button_' + casinoId);
+            if (editForm && editButton) {
+                if (editForm.style.display === "none") {
+                    editForm.style.display = "block";
+                    editButton.style.display = "none";
+                } else {
+                    editForm.style.display = "none";
+                    editButton.style.display = "inline";
+                }
+            }
+        }
+        function toggleAddPlayer() {
+            var addPlayerForm = document.getElementById('add_player_form');
+            if (addPlayerForm) {
+                if (addPlayerForm.style.display === "none") {
+                    addPlayerForm.style.display = "block";
+                } else {
+                    addPlayerForm.style.display = "none";
+                }
+            }
+        }
+        function toggleAddCasino() {
+            var addCasinoForm = document.getElementById('add_casino_form');
+            if (addCasinoForm) {
+                if (addCasinoForm.style.display === "none") {
+                    addCasinoForm.style.display = "block";
+                } else {
+                    addCasinoForm.style.display = "none";
+                }
+            }
+        }
+        function togglePlayerCasinoDetails() {
+            var playerCasinoDetails = document.getElementById('player_casino_details');
+            if (playerCasinoDetails) {
+                if (playerCasinoDetails.style.display === "none") {
+                    playerCasinoDetails.style.display = "block";
+                } else {
+                    playerCasinoDetails.style.display = "none";
+                }
+            }
+        }
+    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var socket = io();
+            socket.on('update_dashboard', function() {
+                window.location.href = window.location.href.split('?')[0];
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <a href="/logout">Logout</a>
+    
+    <button onclick="toggleAddPlayer()">Add Player</button>
+    <form method="post" id="add_player_form" style="display:none;">
+        <h3>Add Player</h3>
+        <input type="text" name="username" placeholder="Username" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit" name="action" value="add_player">Add Player</button>
+    </form>
+    
+    <h3>Players</h3>
+    <ul>
+        {% if players %}
+            {% for player in players %}
+                <li>{{ player[1] }} <a href="/player_info/{{ player[0] }}">View Player Info</a>
+                    <form method="post" style="display:inline;" onsubmit="return confirmDeletePlayer();">
+                        <input type="hidden" name="player_id" value="{{ player[0] }}">
+                        <button type="submit" name="action" value="delete_player">Delete</button>
+                    </form>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li>No players available.</li>
+        {% endif %}
+    </ul>
+    
+    <button onclick="toggleAddCasino()">Add Casino</button>
+    <form method="post" id="add_casino_form" style="display:none;">
+        <h3>Add Casino</h3>
+        <input type="text" name="name" placeholder="Casino Name" required><br>
+        <input type="text" name="affiliate_url" placeholder="Affiliate URL" required><br>
+        <input type="text" name="image_url" placeholder="Image URL" required><br>
+        <input type="text" name="price_range_min" placeholder="Price Range Min (€)" required><br>
+        <input type="text" name="price_range_max" placeholder="Price Range Max (€)" required><br>
+        <input type="number" name="limit_players" placeholder="Limit of Players" required><br>
+        <button type="submit" name="action" value="add_casino">Add Casino</button>
+    </form>
+    
+    <h3>Manage Casinos</h3>
+    <ul>
+        {% if casinos %}
+            {% for casino in casinos %}
+                <li>
+                    <strong>{{ casino[1] }}</strong><br>
+                    <button id="edit_button_{{ casino[0] }}" onclick="toggleEditCasino({{ casino[0] }})">Edit</button>
+                    <form method="post" id="edit_form_{{ casino[0] }}" style="display:none;">
+                        <input type="hidden" name="casino_id" value="{{ casino[0] }}">
+                        <label for="new_name_{{ casino[0] }}">Name:</label>
+                        <input type="text" id="new_name_{{ casino[0] }}" name="new_name" value="{{ casino[1] }}" required><br>
+                        <label for="new_affiliate_url_{{ casino[0] }}">Affiliate URL:</label>
+                        <input type="text" id="new_affiliate_url_{{ casino[0] }}" name="new_affiliate_url" value="{{ casino[2] }}" required><br>
+                        <label for="new_image_url_{{ casino[0] }}">Image URL:</label>
+                        <input type="text" id="new_image_url_{{ casino[0] }}" name="new_image_url" value="{{ casino[3] }}" required><br>
+                        <label for="new_price_range_min_{{ casino[0] }}">Price Range Min (€):</label>
+                        <input type="text" id="new_price_range_min_{{ casino[0] }}" name="new_price_range_min" value="{{ casino[4] }}" required><br>
+                        <label for="new_price_range_max_{{ casino[0] }}">Price Range Max (€):</label>
+                        <input type="text" id="new_price_range_max_{{ casino[0] }}" name="new_price_range_max" value="{{ casino[5] }}" required><br>
+                        <label for="new_limit_players_{{ casino[0] }}">Limit of Players:</label>
+                        <input type="number" id="new_limit_players_{{ casino[0] }}" name="new_limit_players" value="{{ casino[6] }}" required><br>
+                        <button type="submit" name="action" value="edit_casino">Save Changes</button>
+                    </form>
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="casino_id" value="{{ casino[0] }}">
+                        <button type="submit" name="action" value="delete_casino">Delete Casino</button>
+                    </form>
+                    Current Active Players: {% if casino[7] is defined %}{{ casino[7] }}{% else %}0{% endif %}<br>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li>No casinos available.</li>
+        {% endif %}
+    </ul>
+    
+    <button onclick="togglePlayerCasinoDetails()">Player Casino Details</button>
+    <div id="player_casino_details" style="display:none;">
+        <h3>Players and Their Active Casinos</h3>
+        <ul>
+            {% if player_casinos %}
+                {% for player_casino in player_casinos %}
+                    <li>
+                        Player: {{ player_casino[1] }}<br>
+                        Casino: {{ player_casino[3] }}<br>
+                        Status: {{ player_casino[4] }}<br>
+                        {% if player_casino[4] == 'pending_payment' %}
+                            <strong>Waiting for Payment</strong> - Price Assigned: €{{ player_casino[5] }}<br>
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="player_id" value="{{ player_casino[0] }}">
+                                <input type="hidden" name="casino_id" value="{{ player_casino[2] }}">
+                                <button type="submit" name="action" value="confirm_payment">Payment Done</button>
+                            </form>
+                        {% elif player_casino[4] == 'pending_deposit' %}
+                            <form method="post" style="display:inline;">
+                                Screenshot: <a href="{{ url_for('uploaded_file', filename=player_casino[3]) }}" target="_blank">View Screenshot</a><br>
+                                <input type="hidden" name="player_id" value="{{ player_casino[0] }}">
+                                <input type="hidden" name="casino_id" value="{{ player_casino[2] }}">
+                                <button type="submit" name="action" value="approve_screenshot">Approve Screenshot</button>
+                            </form>
+                        {% elif player_casino[4] == 'pending_approval' %}
+                            <form method="post" style="display:inline;">
+                                <input type="hidden" name="player_id" value="{{ player_casino[0] }}">
+                                <input type="hidden" name="casino_id" value="{{ player_casino[2] }}">
+                                <button type="submit" name="action" value="payment_done">Approve Payment</button>
+                            </form>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            {% else %}
+                <li>No active casinos for players.</li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    <h3>Pending Casinos for Approval</h3>
+    <ul>
+        {% if pending_casinos %}
+            {% for pending in pending_casinos %}
+                <li>
+                    Player: {{ pending[5] }}<br>
+                    Casino: {{ pending[6] }}<br>
+                    Status: {{ pending[2] }}<br>
+                    {% if pending[2] == 'screenshot_uploaded' %}
+                        Screenshot: {% if pending[4] %}<a href="{{ url_for('uploaded_file', filename=pending[4]) }}" target="_blank">View Screenshot</a> | <a href="{{ url_for('uploaded_file', filename=pending[4]) }}" download>Download Screenshot</a>{% else %}No screenshot available.{% endif %}<br>
+                        <form method="post" style="display:inline;">
+                            <input type="hidden" name="player_id" value="{{ pending[0] }}">
+                            <input type="hidden" name="casino_id" value="{{ pending[1] }}">
+                            <button type="submit" name="action" value="approve_screenshot">Approve</button>
+                            <button type="submit" name="action" value="decline_screenshot">Decline</button>
+                        </form>
+                    {% endif %}
+                    <form method="post" style="display:inline;">
+                        <input type="hidden" name="player_id" value="{{ pending[0] }}">
+                        <input type="hidden" name="casino_id" value="{{ pending[1] }}">
+                        <button type="submit" name="action" value="cancel_casino">Cancel Activation</button>
+                    </form>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li>No pending casinos for approval.</li>
+        {% endif %}
+    </ul>
+</body>
+</html>
